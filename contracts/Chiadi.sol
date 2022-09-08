@@ -10,20 +10,19 @@ contract Chiadi is IERC20 {
     string private _name;
     string private _symbol;
     uint8 private _decimals;
-    // total number of chiadi token
+    // total number of `Chiadi XO` token
     uint256 private _totalSupply;
-    // address private _owner = 0x2Ca3138492c364AA09e6525720f34dc645EBFBAA;
-    address private _owner = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4;
+    address private _owner = 0x2Ca3138492c364AA09e6525720f34dc645EBFBAA;
     // returns true if it is an approved owner
     mapping(address => bool) private _approvedOwners;
     // balance of addresses
     mapping(address => uint256) private _balances;
-    mapping(address => mapping(address => uint256)) public _allowances;
+    mapping(address => mapping(address => uint256)) private _allowances;
 
     event Create(address, uint256, string, uint256);
+    event Change(address, uint256, address);
     event Mint(address, uint256, uint256);
     event Burn(address, uint256, uint256);
-    event Change(address, uint256, address);
 
     constructor() {
         _name = "Chiadi XO";
@@ -52,16 +51,11 @@ contract Chiadi is IERC20 {
     function totalSupply() public view override returns(uint256) {
         return _totalSupply;
     }
-
-    function approvedOwners(address accountAddress) private view returns(bool) {
-        return _approvedOwners[accountAddress];
+     
+    function balanceOf(address account)public view override returns (uint256){
+        return _balances[account];
     }
 
-    function isOneOfTheTwo(address __owner, address __spender) public  view returns(bool) {
-        return((msg.sender == __owner) || msg.sender == __spender);
-    }
-
-    
     /**
      * @dev Moves the `amount` of tokens from the caller's account (which must be an `approvedOwners`)
      * to `to`. It returns a boolean value indicating whether the operation succeeded.
@@ -80,14 +74,13 @@ contract Chiadi is IERC20 {
         return true;
     }
 
-
     /**
     * @dev Returns the remaining number of tokens that `spender` will be
     * allowed to spend on behalf of `owner` through {transferFrom}. This is
     * zero by default.
     *
     * This value changes when {approve} or {transferFrom} are called.
-    * @param owner and spender is someone who has a cxo token
+    * @param owner and spender is an address with a cxo token
     */
     function allowance(address owner, address spender) public view override returns(uint256) {
         require(msg.sender != address(0), "!Address");
@@ -95,34 +88,81 @@ contract Chiadi is IERC20 {
         require(spender != address(0), "!Spender");
         require(approvedOwners(owner), "!Owner");
         require(approvedOwners(spender), "!Spender");
-        require(isOneOfTheTwo(owner, spender), "!Owner && !Spender)");
+        require(anyOf(owner, spender), "!Owner && !Spender)");
         uint256 _allowance = _allowances[owner][spender];
         return _allowance;
     }
 
     /**
-    * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-    *
-    * Returns a boolean value indicating whether the operation succeeded.
-    *
-    * IMPORTANT: Beware that changing an allowance with this method brings the risk
-    * that someone may use both the old and the new allowance by unfortunate
-    * transaction ordering. One possible solution to mitigate this race
-    * condition is to first reduce the spender's allowance to 0 and set the
-    * desired value afterwards:
-    * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-    *
-    * Emits an {Approval} event.
-    */
+     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
+     *
+     * This internal function is equivalent to `approve`, and can be used to
+     * e.g. set automatic allowances for certain subsystems, etc.
+     *
+     * Emits an {Approval} event.
+     *
+     * Requirements:
+     *
+     * - `owner = msg.sender` cannot be the zero address.
+     * - `spender` cannot be the zero address.
+     */
     function approve(address spender, uint256 amount) public override returns(bool) {
-        // msg.sender == the address of the caller.
         require(msg.sender != address(0), "!Address");
         require(spender != address(0), "!Spender");
         require(approvedOwners(msg.sender), "!Account Exists");
         require(msg.sender != spender, "Caller == Spender");
         require(_balances[msg.sender] >= amount, "Balance < Amount");
-        _allowances[msg.sender][spender] += amount;
+        _allowances[msg.sender][spender] = amount;
         emit Approval(msg.sender, spender, amount);
+        return true;
+    }
+
+    /**
+     * @dev Atomically increases the allowance granted to `spender` by the caller.
+     *
+     * This is an alternative to {approve} that can be used as a mitigation for
+     * problems described in {IERC20-approve}.
+     *
+     * Emits an {Approval} event indicating the updated allowance.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     */
+    function increaseAllowance(address spender, uint256 addedValue) public virtual returns(bool) {
+        require(spender != address(0), "!Spender");
+        require(msg.sender != address(0), "!Address");
+        require(approvedOwners(msg.sender), "!Account Exists");
+        require(msg.sender != spender, "Caller == Spender");
+        require(_balances[msg.sender] >= addedValue, "Balance < AddedValue");
+        address owner = msg.sender;
+        approve(spender, allowance(owner, spender) + addedValue);
+        return true;
+    }
+
+    /**
+     * @dev Atomically decreases the allowance granted to `spender` by the caller.
+     *
+     * This is an alternative to {approve} that can be used as a mitigation for
+     * problems described in {IERC20-approve}.
+     *
+     * Emits an {Approval} event indicating the updated allowance.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     * - `spender` must have allowance for the caller of at least
+     * `subtractedValue`.
+     */
+    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
+        require(spender != address(0), "!Spender");
+        require(spender != address(0), "!Spender");
+        uint256 currentAllowance = allowance(msg.sender, spender);
+        require(currentAllowance >= subtractedValue, "you cannot decreased allowance below zero");
+        unchecked {
+            approve(spender, currentAllowance - subtractedValue);
+        }
+
         return true;
     }
 
@@ -132,8 +172,6 @@ contract Chiadi is IERC20 {
     * allowance.
     *
     * Returns a boolean value indicating whether the operation succeeded.
-    *
-    * The person calling transferFrom doesn't need to own tokens.
     *
     * Emits a {Transfer} event.
     */
@@ -150,7 +188,7 @@ contract Chiadi is IERC20 {
         emit Transfer(from, to, amount);
         return true;
     }
-
+ 
     /*
     * @dev: {mint()} adds more tokens to the `_totalSupply`.
     */
@@ -184,8 +222,18 @@ contract Chiadi is IERC20 {
         _owner = new_owner;
         emit Change(msg.sender, block.timestamp, new_owner);
     }
-
-    function balanceOf(address account)public view override returns (uint256){
-        return _balances[account];
+    
+    /**
+    * @dev checks if any of the params is equal to the callers address
+    */
+    function anyOf(address __owner, address __spender) private view returns(bool) {
+        return((msg.sender == __owner) || msg.sender == __spender);
+    }
+    
+    /**
+    * @dev approvedOwners verifies if the address owns a CXO token
+    */
+    function approvedOwners(address accountAddress) private view returns(bool) {
+        return _approvedOwners[accountAddress];
     }
 }
