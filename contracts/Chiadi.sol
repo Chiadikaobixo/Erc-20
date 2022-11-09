@@ -12,7 +12,7 @@ contract Chiadi is IERC20 {
     uint8 private _decimals;
     // total number of `Chiadi XO` token
     uint256 private _totalSupply;
-    address private _owner = 0x2Ca3138492c364AA09e6525720f34dc645EBFBAA;
+    address private _owner = 0x27a60Ee164332989D61AEF3Ccc699856BF99fcFf;
     // returns true if it is an approved owner
     mapping(address => bool) private _approvedOwners;
     // balance of addresses

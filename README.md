@@ -14,4 +14,4 @@ Mint: add more token to the totalsupply.
 Burn: removes or burn down the total amount of token.    
 Approval: A log of an approved event (an event).    
 
-[Deployed contract on Rinkeby Etherscan.](https://rinkeby.etherscan.io/address/0xF78e51b0F9b58B2D5bc47FF7227f40eD609352A2 "Chiadi ERC-20") 
+[Deployed contract on Goerli Etherscan.](https://goerli.etherscan.io/address/0xd0965aB6d8E1284dC4381412cd1c90143f477D10 "Chiadi ERC-20") 
